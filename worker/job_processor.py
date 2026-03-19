@@ -57,6 +57,15 @@ def process_job(job: dict, engine, client) -> None:
             logger.info("Cleaned up %s", temp_dir)
 
 
+def _sanitize_name(name: str) -> str:
+    """Sanitize job name for use in filenames."""
+    import re
+    # Replace spaces and unsafe chars with underscores, collapse multiples
+    s = re.sub(r'[^\w\-.]', '_', name)
+    s = re.sub(r'_+', '_', s).strip('_')
+    return s or "job"
+
+
 def _run_pipeline(
     job_id: str, config: dict, engine, client, temp_dir: str
 ) -> None:
@@ -68,6 +77,8 @@ def _run_pipeline(
     # Get job details for storage paths
     result = client.table("jobs").select("*").eq("id", job_id).single().execute()
     job_data = result.data
+
+    job_name = _sanitize_name(job_data.get("name", "job"))
 
     input_path = job_data["input_storage_path"]
     alpha_path = job_data["alpha_storage_path"]
@@ -247,9 +258,9 @@ def _run_pipeline(
     update_job(client, job_id, status="uploading")
 
     output_dirs = [
+        ("comp", comp_dir),       # PNGs first — small, enables preview in UI immediately
         ("fg", fg_dir),
         ("matte", matte_dir),
-        ("comp", comp_dir),
         ("processed", proc_dir),
     ]
 
@@ -266,15 +277,19 @@ def _run_pipeline(
             # Extract frame number from filename
             frame_num = None
             stem = os.path.splitext(fname)[0]
+            ext = os.path.splitext(fname)[1]
             if stem.isdigit():
                 frame_num = int(stem)
+
+            # Display name: Shot02-Close_comp_00000.png
+            display_name = f"{job_name}_{file_type}_{stem}{ext}"
 
             insert_job_file(
                 client,
                 job_id,
                 file_type,
                 storage_path,
-                fname,
+                display_name,
                 frame_number=frame_num,
             )
 

@@ -52,19 +52,37 @@ export async function GET(
     return NextResponse.json([]);
   }
 
-  // Generate signed URLs (1 hour expiry)
-  const signedFiles = await Promise.all(
-    files.map(async (file: { storage_path: string; file_name: string; file_type: string; frame_number: number | null }) => {
-      const { data } = await admin.storage
-        .from(STORAGE_BUCKET)
-        .createSignedUrl(file.storage_path, 3600);
+  // Generate signed URLs in batches using createSignedUrls (bulk)
+  const BATCH_SIZE = 100;
+  const paths = files.map((f: { storage_path: string }) => f.storage_path);
+  const signedUrlMap = new Map<string, string>();
 
-      return {
-        file_name: file.file_name,
-        file_type: file.file_type,
-        frame_number: file.frame_number,
-        url: data?.signedUrl || null,
-      };
+  for (let i = 0; i < paths.length; i += BATCH_SIZE) {
+    const batch = paths.slice(i, i + BATCH_SIZE);
+    const { data } = await admin.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrls(batch, 3600);
+
+    if (data) {
+      data.forEach((item: { path: string | null; signedUrl: string }) => {
+        if (item.path && item.signedUrl) {
+          signedUrlMap.set(item.path, item.signedUrl);
+        }
+      });
+    }
+  }
+
+  const signedFiles = files.map(
+    (file: {
+      storage_path: string;
+      file_name: string;
+      file_type: string;
+      frame_number: number | null;
+    }) => ({
+      file_name: file.file_name,
+      file_type: file.file_type,
+      frame_number: file.frame_number,
+      url: signedUrlMap.get(file.storage_path) || null,
     })
   );
 

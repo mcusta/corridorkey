@@ -1,0 +1,14 @@
+.git
+.env
+.env.local
+__pycache__
+*.pyc
+node_modules
+web
+docs
+.github
+tests
+docs/*.md
+ARCHITECTURE.md
+CHANGELOG.md
+supabase

@@ -25,8 +25,7 @@ uv run hf download nikopueringer/CorridorKey_v1.0 \
   --local-dir CorridorKeyModule/checkpoints
 
 # 4. Install worker dependencies
-cd worker
-pip install -r requirements.txt
+pip install -r worker/requirements.txt
 
 # 5. Configure environment
 cp .env.example .env

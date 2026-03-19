@@ -38,6 +38,11 @@ git pull fork main
 ### 5. Install Dependencies (DONE)
 ```bash
 cd /workspace/CorridorKey
+
+# Install CorridorKey + all its deps (torch, cv2, numpy, timm, etc.)
+pip install -e .
+
+# Install worker-specific deps (supabase client, dotenv)
 pip install -r worker/requirements.txt
 ```
 

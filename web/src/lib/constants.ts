@@ -23,3 +23,7 @@ export const STATUS_COLORS: Record<JobStatus, string> = {
 export const TERMINAL_STATUSES: JobStatus[] = ["completed", "failed"];
 
 export const STORAGE_BUCKET = "job-assets";
+
+// GPU cost estimation (Runpod A4090)
+export const GPU_HOURLY_RATE = 0.69; // $/hr
+export const SECONDS_PER_FRAME_ESTIMATE = 1.2; // avg from real tests

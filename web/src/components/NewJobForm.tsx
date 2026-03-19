@@ -63,6 +63,11 @@ export default function NewJobForm() {
       return;
     }
 
+    // Trigger RunPod serverless endpoint (fire-and-forget)
+    fetch(`/api/jobs/${jobId}/trigger`, { method: "POST" }).catch(() => {
+      // Trigger failure is non-fatal — job stays queued and can be retried
+    });
+
     router.push(`/jobs/${jobId}`);
   }
 

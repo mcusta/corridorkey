@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CorridorKey",
-  description: "Green screen keying tool",
+  title: "AI FX Lab",
+  description: "AI-powered film VFX toolbox",
 };
 
 export default function RootLayout({

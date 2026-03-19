@@ -1,8 +1,8 @@
-# CorridorKey Web App — Phase Tracker
+# AI FX Lab — Phase Tracker
 
 ## Overview
 
-Building a private internal MVP web app around CorridorKey.
+Building a private internal MVP multi-tool hub for AI film/VFX processing.
 Each phase is designed to be done in a separate chat session with clean context.
 
 ---
@@ -53,46 +53,116 @@ Connect to real Supabase project and test the web app locally.
 ---
 
 ## Phase 3 — GPU Worker Test
-**Status: NEXT**
+**Status: COMPLETE**
 
 Deploy worker to a GPU machine and test end-to-end processing.
 
-- [ ] Set up Runpod (or equivalent) with 24GB+ VRAM
-- [ ] Clone repo, install deps, download CorridorKey model weights
-- [ ] Configure `worker/.env` with Supabase keys
-- [ ] Run `python worker.py`
-- [ ] Submit a real job through web UI
-- [ ] Verify: queued → preparing → processing → uploading → completed
-- [ ] Verify output files appear in Supabase Storage
-- [ ] Verify comp PNG preview works in web UI
-- [ ] Verify download works
-- [ ] Test error handling (kill worker mid-job, verify stale recovery)
+- [x] Set up Runpod (A4090) with 24GB+ VRAM
+- [x] Clone repo, install deps, download CorridorKey model weights
+- [x] Configure `worker/.env` with Supabase keys
+- [x] Run `python worker.py`
+- [x] Submit a real job through web UI
+- [x] Verify: queued → preparing → processing → uploading → completed
+- [x] Verify output files appear in Supabase Storage
+- [x] Verify comp PNG preview works in web UI
+- [x] Verify download buttons appear
+
+**Report:** `docs/webapp/PHASE3_REPORT.md`
 
 ---
 
 ## Phase 4 — Fix + Polish
-**Status: PENDING**
+**Status: COMPLETE**
 
 Fix whatever breaks in Phase 2-3 and polish the experience.
 
-- [ ] Fix any upload/download edge cases
-- [ ] Fix any auth/session issues
-- [ ] Tune polling intervals
-- [ ] Improve error messages shown to user
-- [ ] Test with different video formats/sizes
-- [ ] Verify progress bar updates correctly
+- [x] UI navigation: navbar links, back buttons, rename/delete jobs
+- [x] Preview & playback: gallery, lightbox, 24fps playback, keyboard nav
+- [x] Downloads: ZIP per type, Download All, progress indicators
+- [x] File naming: `{JobName}_{type}_{frame}.{ext}`
+- [x] Bug fixes: batch signed URLs, cursor-pointer, status badges
+- [x] Upload phase preview: live comp preview during upload
+- [x] Estimated cost display on completed and in-progress jobs
+
+**Report:** `docs/webapp/PHASE4_REPORT.md`
 
 ---
 
-## Phase 5 — Deploy for Real
-**Status: PENDING**
+## Phase 5 — Deploy (RunPod Serverless + Vercel)
+**Status: COMPLETE**
 
-Production deployment.
+Migrate from always-on GPU pod to pay-per-second serverless. Deploy web app to Vercel.
 
-- [ ] Deploy web app to Vercel (or similar)
-- [ ] Set up worker as persistent service on Runpod
-- [ ] Final end-to-end verification
-- [ ] Document any production-specific config
+### RunPod Serverless Worker
+- [x] Create `worker/handler.py` — RunPod serverless handler
+- [x] Create `worker/Dockerfile` — packages worker + CorridorKey + model weights
+- [x] Fix Dockerfile: missing source dirs, PyTorch version, .dockerignore location
+- [x] Build & push Docker image to GHCR (`ghcr.io/mcusta/corridorkey-worker:v1`, 7.32 GB)
+- [x] Create RunPod Serverless Endpoint (endpoint: `z5gdtxbajlj27b`)
+- [x] Configure env vars on RunPod (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+- [x] Set execution timeout to 1800s (required for 4K jobs)
+
+### Web App Integration
+- [x] Add `POST /api/jobs/[id]/trigger` — calls RunPod `/run` endpoint
+- [x] Update job creation flow — auto-trigger after status becomes `queued`
+- [x] Add `RUNPOD_ENDPOINT_ID` and `RUNPOD_API_KEY` env vars
+
+### Web App Deployment
+- [x] Deploy web app to Vercel
+- [x] Set Vercel env vars (Supabase + RunPod + CRON_SECRET)
+- [x] Custom domain: https://fxlab.vercel.app
+- [x] Rename app branding to "AI FX Lab" (navbar, login, page title)
+
+### Storage Management
+- [x] Auto-cleanup cron: daily at 3 AM UTC, deletes jobs >24h old
+- [x] Storage usage indicator in navbar (green/amber/red bar + size)
+- [x] Update Supabase Site URL to https://fxlab.vercel.app
+
+### End-to-End Verification
+- [x] Submit job through deployed web app
+- [x] Verify: queued → preparing → processing → uploading → completed
+- [x] Verify preview + download works
+- [x] Test cold start time (~2-5 min)
+- [x] Test 4K video (100 frames, ~10-13 min on RTX 4090)
+
+**Report:** `docs/webapp/PHASE5_REPORT.md`
+
+---
+
+## Phase 6 — Hub Architecture + MatAnyone2
+**Status: READY TO BUILD**
+
+Transform the single-tool app into a multi-tool AI FX hub. Add MatAnyone2 as the second tool.
+
+### Hub Architecture
+- [ ] Create home page with tool selector cards (CorridorKey, MatAnyone2)
+- [ ] Move CorridorKey new job form to `/tools/corridorkey/new`
+- [ ] Add `engine` column to `jobs` table ("corridorkey" | "matanyone2")
+- [ ] Update job creation API to accept engine type
+- [ ] Shared job detail page works for both engines (`/jobs/[id]`)
+
+### MatAnyone2 — Web UI
+- [ ] Create `/tools/matanyone/new` page
+- [ ] Video upload + first frame extraction
+- [ ] Interactive mask selector: browser-side MobileSAM (ONNX Runtime)
+- [ ] Click on person → SAM generates mask → show overlay
+- [ ] Positive/negative point clicks, mask refinement
+- [ ] Confirm mask → upload mask PNG + video → submit job
+
+### MatAnyone2 — Worker
+- [ ] Add MatAnyone2 to Dockerfile (`pip install matanyone2` or clone + install)
+- [ ] Create `matanyone2_processor.py` in worker
+- [ ] Update `handler.py` to route by engine type
+- [ ] MatAnyone2 output: alpha matte video (`_pha.mp4`) + foreground video (`_fgr.mp4`)
+- [ ] Adapt upload flow for video outputs (not frame sequences)
+
+### Docker & Deploy
+- [ ] Rebuild Docker image with MatAnyone2 (v2)
+- [ ] Push to GHCR
+- [ ] Deploy updated web app to Vercel
+- [ ] End-to-end test: MatAnyone2 job through full pipeline
+
+**Guide:** `docs/webapp/PHASE6_GUIDE.md`
 
 ---
 
@@ -102,8 +172,10 @@ Production deployment.
 |-----------|-----------|
 | DB Schema | `supabase/schema.sql` |
 | Web App | `web/src/` (Next.js App Router) |
-| API Routes | `web/src/app/api/jobs/route.ts`, `web/src/app/api/upload/route.ts` |
-| Worker | `worker/worker.py`, `worker/job_processor.py` |
-| Architecture | `ARCHITECTURE.md` |
+| API Routes | `web/src/app/api/` |
+| Worker (serverless) | `worker/handler.py`, `worker/Dockerfile` |
+| Worker (processing) | `worker/job_processor.py`, `worker/supabase_client.py` |
+| Architecture | `docs/webapp/ARCHITECTURE.md` |
 | Plan | `docs/webapp/PLAN.md` |
 | Phase Reports | `docs/webapp/PHASE{N}_REPORT.md` |
+| Phase Guides | `docs/webapp/PHASE{N}_GUIDE.md` |
